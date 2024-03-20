@@ -13,8 +13,9 @@ function refreshRows(wsId) {
 	}
 
 function sendRequest(info, worksheetId, callback) {
-	$.ajax({
-		url: "RequestController",
+	var respone = $.ajax({
+		url: "RequestController?" + new Date().getTime(),
+		caches: false,
 		type: "POST",
 		data: info,
 		dataType: "json",
@@ -36,6 +37,7 @@ function sendRequest(info, worksheetId, callback) {
 				hideLoading(worksheetId);
 		}
 	});
+	console.log(respone);
 }
 
 function getColumnHeadings(worksheetId) {

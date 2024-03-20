@@ -101,6 +101,7 @@ public class ExecutionController {
 		return commandFactoryMap;
 	}
 
+	// get command 
 	public Command getCommand(HttpServletRequest request) {
 		CommandFactory cf = commandFactoryMap.get(request.getParameter("command"));
 		if (cf != null) {
@@ -114,6 +115,7 @@ public class ExecutionController {
 				}
 			}
 			else {
+				// Creating command from request
 				return cf.createCommand(request, workspace);
 			}
 		} else {

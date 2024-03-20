@@ -24,6 +24,7 @@ package edu.isi.karma.webserver;
 
 import java.io.IOException;
 
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import edu.isi.karma.controller.command.CommandType;
 import edu.isi.karma.controller.update.HistoryUpdate;
 
+import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +51,8 @@ public class RequestController extends HttpServlet {
 	private static Logger logger = LoggerFactory.getLogger(RequestController.class);
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+
 		String workspaceId = request.getParameter("workspaceId");
 		ExecutionController ctrl = WorkspaceRegistry.getInstance().getExecutionController(workspaceId);
 		if (ctrl == null) {
@@ -93,13 +97,18 @@ public class RequestController extends HttpServlet {
 
 		}
 		else {
+
+			// creating command and send request to server
 			Command command = ctrl.getCommand(request);
 			try {
 				UpdateContainer updateContainer =ctrl.invokeCommand(command);
 				if (command.getCommandType() != CommandType.notInHistory) {
 					updateContainer.add(new HistoryUpdate(vWorkspace.getWorkspace().getCommandHistory()));
 				}
+
+				// The following line is commented out because the updates are applied in the client side
 				updateContainer.applyUpdates(vWorkspace);
+				
 				responseString = updateContainer.generateJson(vWorkspace);
 			} catch(Exception e) {
 				responseString = getErrorMessage(vWorkspace, e);

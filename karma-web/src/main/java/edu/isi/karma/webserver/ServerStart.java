@@ -24,13 +24,16 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.isi.karma.linkedapi.server.AppContextListener;
 import edu.isi.karma.webserver.ServletContextParameterMap.ContextParameter;
+
 
 public class ServerStart extends HttpServlet {
 	private static Logger logger = LoggerFactory.getLogger(ServerStart.class);
@@ -74,6 +77,11 @@ public class ServerStart extends HttpServlet {
 		logger.info("************");
 		logger.info("Server start servlet initialized successfully..");
 		logger.info("***********");
+
+
+		AppContextListener appContext = new AppContextListener();
+
+		appContext.contextInitialized(new ServletContextEvent(getServletContext()));
 
 	}
 

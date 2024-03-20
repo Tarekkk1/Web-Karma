@@ -82,6 +82,7 @@ public class ImportServiceCommand extends ImportCommand {
     @Override
     public UpdateContainer doIt(Workspace workspace) throws CommandException {
         //save the preferences 
+        System.out.println("ImportServiceCommand.doIt()");
 
         UpdateContainer c = new UpdateContainer();
 
