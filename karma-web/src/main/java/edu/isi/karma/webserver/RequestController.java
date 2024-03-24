@@ -33,6 +33,9 @@ import javax.servlet.http.HttpServletResponse;
 import edu.isi.karma.controller.command.CommandType;
 import edu.isi.karma.controller.update.HistoryUpdate;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.python.core.io.BufferedReader;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import edu.isi.karma.controller.command.Command;
 import edu.isi.karma.controller.command.CommandException;
 import edu.isi.karma.controller.command.IPreviewable;
+import edu.isi.karma.controller.command.publish.PublishRDFCommandFactory;
 import edu.isi.karma.controller.update.ErrorUpdate;
 import edu.isi.karma.controller.update.UpdateContainer;
 import edu.isi.karma.view.VWorkspace;
@@ -51,8 +55,14 @@ public class RequestController extends HttpServlet {
 	private static Logger logger = LoggerFactory.getLogger(RequestController.class);
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		if (request.getParameter("graphUri") != null)
+		{
+			System.out.println("graphUri is not nullllllllllll");
+			System.out.println(request.getParameter("graphUri"));
+		}
 
-
+	
 		String workspaceId = request.getParameter("workspaceId");
 		ExecutionController ctrl = WorkspaceRegistry.getInstance().getExecutionController(workspaceId);
 		if (ctrl == null) {
@@ -68,6 +78,7 @@ public class RequestController extends HttpServlet {
 		boolean isUserInteraction = Boolean.parseBoolean(request.getParameter("isUserInteraction"));
 		boolean isExecute = Boolean.parseBoolean(request.getParameter("execute"));
 		if (isUserInteraction) {
+			System.out.println("first if part");
 			String commandId = request.getParameter("commandId");
 			Command currentCommand = (Command) ctrl.getWorkspace().getCommandHistory().getPreviewCommand(commandId);
 			try {
@@ -85,6 +96,8 @@ public class RequestController extends HttpServlet {
 			}
 		}
 		else if (isPreview) {
+
+			System.out.println("second if part");
 			Command command = ctrl.getCommand(request);
 			try {
 				UpdateContainer updateContainer = ((IPreviewable) command).showPreview(request);
@@ -100,6 +113,8 @@ public class RequestController extends HttpServlet {
 
 			// creating command and send request to server
 			Command command = ctrl.getCommand(request);
+		
+			System.out.println("Else Part");
 			try {
 				UpdateContainer updateContainer =ctrl.invokeCommand(command);
 				if (command.getCommandType() != CommandType.notInHistory) {

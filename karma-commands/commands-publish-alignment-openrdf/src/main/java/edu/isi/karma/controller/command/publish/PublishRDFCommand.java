@@ -149,6 +149,7 @@ public class PublishRDFCommand extends WorksheetSelectionCommand {
 
 	@Override
 	public UpdateContainer doIt(Workspace workspace) throws CommandException {
+		System.out.println("PublishRDFCommand.doIt()");
 		final ServletContextParameterMap contextParameters = ContextParametersRegistry.getInstance().getContextParameters(workspace.getContextId());
 		//save the preferences 
 		savePreferences(workspace);

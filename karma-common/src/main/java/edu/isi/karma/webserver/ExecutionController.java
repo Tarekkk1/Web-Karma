@@ -71,7 +71,6 @@ public class ExecutionController {
 			if(!Modifier.isAbstract(subType.getModifiers()) && !subType.isInterface())
 				try
 			{
-
 					CommandFactory commandFactory = subType.newInstance();
 					Class<? extends Command> command = commandFactory.getCorrespondingCommand();
 
@@ -103,11 +102,14 @@ public class ExecutionController {
 
 	// get command 
 	public Command getCommand(HttpServletRequest request) {
+		System.out.println("get command");
 		CommandFactory cf = commandFactoryMap.get(request.getParameter("command"));
 		if (cf != null) {
 			if (cf instanceof JSONInputCommandFactory) {
+				System.out.print("get first command first");
 				String newInfo = request.getParameter("newInfo");
 				try {
+					System.out.println(newInfo);
 					return cf.createCommand(newInfo == null ? null : new JSONArray(newInfo), Command.NEW_MODEL, workspace);
 				} catch (Exception e) {
 					logger.error("Error getting command!!", e);
@@ -116,9 +118,11 @@ public class ExecutionController {
 			}
 			else {
 				// Creating command from request
+				System.out.println("get second command second");
 				return cf.createCommand(request, workspace);
 			}
 		} else {
+			System.out.println("get third command third");
 			logger.error("Command " + request.getParameter("command")
 					+ " not found!");
 			return null;

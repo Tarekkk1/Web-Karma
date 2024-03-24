@@ -96,6 +96,8 @@ var PublishRDFDialog = (function() {
 		}
 
 		function returnFunc(info) {
+			console.log("Publishing RDF");
+			console.log(info);
 			sendRequest(info, info['worksheetId']);
 		}
 

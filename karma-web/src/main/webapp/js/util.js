@@ -37,7 +37,6 @@ function sendRequest(info, worksheetId, callback) {
 				hideLoading(worksheetId);
 		}
 	});
-	console.log(respone);
 }
 
 function getColumnHeadings(worksheetId) {

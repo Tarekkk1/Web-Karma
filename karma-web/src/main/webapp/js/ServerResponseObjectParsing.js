@@ -629,7 +629,9 @@ function parse(data) {
 			// Remove existing link if any
 			$("a.RdfDownloadLink", titleDiv).remove();
 
+			// Add the new link
 			var downloadLink = $("<a>").attr("href", element["fileUrl"]).text("RDF").addClass("RdfDownloadLink  DownloadLink").attr("target", "_blank");
+			// // Add the download link
 			$("div#WorksheetOptionsDiv", titleDiv).after(downloadLink);
 
 			var errorArr = $.parseJSON(element["errorReport"]);
