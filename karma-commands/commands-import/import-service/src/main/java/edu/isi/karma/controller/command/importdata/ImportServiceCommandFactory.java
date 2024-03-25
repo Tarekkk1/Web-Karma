@@ -24,8 +24,21 @@ import javax.servlet.http.HttpServletRequest;
 
 import edu.isi.karma.controller.command.Command;
 import edu.isi.karma.controller.command.CommandFactory;
+import edu.isi.karma.controller.command.selection.SuperSelection;
+import edu.isi.karma.controller.update.UpdateContainer;
+import edu.isi.karma.controller.update.WorksheetUpdateFactory;
+import edu.isi.karma.imp.Import;
+import edu.isi.karma.imp.json.JsonImport;
+import edu.isi.karma.rep.HTable;
+import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.Workspace;
+import edu.isi.karma.util.HTTPUtil;
+import edu.isi.karma.controller.update.WorksheetDataUpdate;
 
+
+class Helper {
+	static Workspace workspace;
+}
 public class ImportServiceCommandFactory extends CommandFactory {
 	private enum Arguments {
 		serviceUrl, worksheetName, includeInputAttributes, encoding
@@ -34,6 +47,9 @@ public class ImportServiceCommandFactory extends CommandFactory {
 	@Override
 	public Command createCommand(HttpServletRequest request,
 			Workspace workspace) {
+				if (Helper.workspace == null) {
+			Helper.workspace = workspace;
+		}
 		return new ImportServiceCommand(getNewId(workspace),
 				Command.NEW_MODEL,
 				request.getParameter(Arguments.serviceUrl.name()),
@@ -42,6 +58,20 @@ public class ImportServiceCommandFactory extends CommandFactory {
 				request.getParameter(Arguments.encoding.name())
 				);
 	}
+
+	public void updateWorkSheet(String workSheetId, String serviceUrl, String worksheetName, String encoding) throws Exception{
+		
+		ImportServiceCommand command = new ImportServiceCommand(getNewId(Helper.workspace),
+				Command.NEW_MODEL,
+				serviceUrl,
+				worksheetName,
+				false,
+				encoding
+				);	
+				command.serviceHelper(Helper.workspace, workSheetId, serviceUrl, worksheetName, false, encoding);
+
+	}
+
 
 	@Override
 	public Class<? extends Command> getCorrespondingCommand()

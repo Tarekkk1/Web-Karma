@@ -96,6 +96,10 @@ public class Worksheet extends RepEntity {
         return dataTable;
     }
 
+    public void setDataTable(Table dataTable) {
+        this.dataTable = dataTable;
+    }
+
     public String getEncoding() {
     	return this.encoding;
     }

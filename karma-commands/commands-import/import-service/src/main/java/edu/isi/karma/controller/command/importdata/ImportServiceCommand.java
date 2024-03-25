@@ -22,14 +22,18 @@
  */
 package edu.isi.karma.controller.command.importdata;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.isi.karma.controller.command.CommandException;
+import edu.isi.karma.controller.command.selection.SuperSelection;
 import edu.isi.karma.controller.command.selection.SuperSelectionManager;
 import edu.isi.karma.controller.update.ErrorUpdate;
 import edu.isi.karma.controller.update.ImportServiceCommandPreferencesUpdate;
@@ -42,6 +46,10 @@ import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.Workspace;
 import edu.isi.karma.rep.sources.InvocationManager;
 import edu.isi.karma.util.HTTPUtil;
+import edu.isi.karma.webserver.KarmaException;
+import edu.isi.karma.controller.command.importdata.ServiceQueue;
+import edu.isi.karma.controller.command.importdata.ServiceQueues;
+
 
 public class ImportServiceCommand extends ImportCommand {
 
@@ -81,14 +89,12 @@ public class ImportServiceCommand extends ImportCommand {
 
     @Override
     public UpdateContainer doIt(Workspace workspace) throws CommandException {
-        //save the preferences 
-        System.out.println("ImportServiceCommand.doIt()");
-
+      
         UpdateContainer c = new UpdateContainer();
 
         try {
         	Object json = HTTPUtil.executeAndParseHTTPGetService(serviceUrl, includeInputAttributes);
-			logger.debug(json.toString());
+            
             Import imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
 
             Worksheet wsht = imp.generateWorksheet();
@@ -96,13 +102,28 @@ public class ImportServiceCommand extends ImportCommand {
 
             c.add(new WorksheetListUpdate());
             c.append(WorksheetUpdateFactory.createWorksheetHierarchicalAndCleaningResultsUpdates(wsht.getId(), SuperSelectionManager.DEFAULT_SELECTION, workspace.getContextId()));
+            // ServiceQueues.addServiceQueue(wsht.getId(), serviceUrl, encoding, worksheetName);
+           
             return c;
         } catch (Exception e) {
             logger.error("Error occured while creating worksheet from web-service: " + serviceUrl);
             return new UpdateContainer(new ErrorUpdate("Error creating worksheet from web-service"));
         }
+    
     }
 
+    public void serviceHelper(Workspace workspace,String workSheetId, String serviceUrl, String worksheetName, boolean includeInputAttributes, String encoding) throws ClientProtocolException, IOException,CommandException, JSONException, ClassNotFoundException, KarmaException {
+        Worksheet worksheet = Helper.workspace.getWorksheet(workSheetId);
+        Object json = HTTPUtil.executeAndParseHTTPGetService(serviceUrl, false);
+        Import imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
+        UpdateContainer c = new UpdateContainer();
+        
+        Worksheet wsht = imp.generateWorksheet();
+        worksheet.setDataTable(wsht.getDataTable());
+        c.add(new WorksheetListUpdate());
+        c.append(WorksheetUpdateFactory.createWorksheetHierarchicalAndCleaningResultsUpdates(workSheetId, SuperSelectionManager.DEFAULT_SELECTION, workspace.getContextId()));
+          
+    }
     @Override
     protected Import createImport(Workspace workspace) {
         throw new UnsupportedOperationException("Not supported yet.");

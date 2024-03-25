@@ -150,6 +150,8 @@ public class HTTPUtil {
 		request.setHeader(HTTP_HEADERS.Accept.name(), "application/json; text/xml");
 		
 		HttpResponse response = httpClient.execute(request);
+		// print the response data
+		System.out.println("Response Code : " + response.getStatusLine().getStatusCode());
 		
 		// Parse the response and store it in a String
 		HttpEntity entity = response.getEntity();

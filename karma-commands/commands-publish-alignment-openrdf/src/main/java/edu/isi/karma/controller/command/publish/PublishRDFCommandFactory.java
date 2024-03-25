@@ -163,7 +163,6 @@ public class PublishRDFCommandFactory extends CommandFactory {
 				);
 
 			comm.doIt(Helper.workspace);
-		System.out.println("doneeeee");
 		}
 		catch (Exception e) {
 			System.out.println("Error in creating command");

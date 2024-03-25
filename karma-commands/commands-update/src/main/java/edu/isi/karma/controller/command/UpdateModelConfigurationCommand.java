@@ -50,6 +50,8 @@ public class UpdateModelConfigurationCommand extends Command {
 	@Override
 	public UpdateContainer doIt(Workspace workspace) throws CommandException {
 		UpdateContainer uc = new UpdateContainer();
+
+		System.out.println("I intered the doit of UpdateModelConfigurationCommand");
 		try {
 				
 				uc.add(new AbstractUpdate() {

@@ -50,6 +50,8 @@ public class UpdateUIConfigurationCommand extends Command {
 	@Override
 	public UpdateContainer doIt(Workspace workspace) throws CommandException {
 		UpdateContainer uc = new UpdateContainer();
+
+		System.out.println("I intered the doit of UpdateUIConfigurationCommand");
 		try {
 				
 				uc.add(new AbstractUpdate() {
