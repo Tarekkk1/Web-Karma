@@ -195,4 +195,61 @@ public class JsonImport extends Import {
 		return ws;
 	}
 
+	public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet) throws JSONException {
+		int numObjects = 0;
+		// remove the existing data
+		worksheet.getDataTable().removeAllRows();
+		if (json instanceof JSONArray) {
+			worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.COLLECTION);
+			JSONArray a = (JSONArray) json;
+			for (int i = 0; i < a.length(); i++) {
+				JsonImportValues JsonImportValues = new JsonImportValues(maxNumLines, numObjects, getFactory(), worksheet, columnsJson);
+				JsonImportValues.addListElement(a.get(i), worksheet.getHeaders(),
+						worksheet.getDataTable());
+				numObjects = JsonImportValues.getNumberOfObjectsImported();
+				if (maxNumLines > 0 && numObjects >= maxNumLines)
+					break;
+			}
+		} else if (json instanceof JSONObject) {
+			worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.OBJECT);
+			JsonImportValues JsonImportValues = new JsonImportValues(maxNumLines, numObjects, getFactory(), worksheet, columnsJson);
+			JsonImportValues.addKeysAndValues((JSONObject) json, worksheet.getHeaders(),
+					worksheet.getDataTable());
+		}
+		else if (json != null && json instanceof FileObject) {
+			FileObject fo = (FileObject)json;
+			boolean flag = true;
+			try {
+				JSONTokener tokener = new JSONTokener(new InputStreamReader(new FileInputStream(fo.file), fo.encoding));
+				char c = tokener.nextClean();			
+				if (c == '{') {
+					worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.OBJECT);
+					JsonImportValues JsonImportValues = new JsonImportValues(maxNumLines, numObjects, getFactory(), worksheet, columnsJson);
+					JsonImportValues.addKeysAndValues(tokener, worksheet.getHeaders(),
+							worksheet.getDataTable());
+				}
+				else if (c == '['){
+					flag = false;
+					worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.COLLECTION);
+					JsonImportValues JsonImportValues = new JsonImportValues(maxNumLines, numObjects, getFactory(), worksheet, columnsJson);
+					JsonImportValues.addListElement(tokener, worksheet.getHeaders(), worksheet.getDataTable());
+				}
+			}catch(Exception e) {
+				String worksheetname = worksheet.getHeaders().getTableName();
+				String encoding = worksheet.getEncoding();
+				workspace.removeWorksheet(worksheet.getId());
+				getFactory().removeWorksheet(worksheet.getId(), workspace.getCommandHistory());
+				createWorksheet(worksheetname, workspace, encoding);
+				if (flag)
+					worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.OBJECT);
+				else
+					worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.COLLECTION);
+				logger.error("Parsing failure", e);
+			}
+		}
+		Worksheet ws = worksheet;
+		ws.getMetadataContainer().getWorksheetProperties().setPropertyValue(Property.sourceType, SourceTypes.JSON.toString());
+	
+	}
+
 }

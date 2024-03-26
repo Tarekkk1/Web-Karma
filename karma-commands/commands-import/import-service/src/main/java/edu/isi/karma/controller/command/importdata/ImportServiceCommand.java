@@ -23,14 +23,27 @@
 package edu.isi.karma.controller.command.importdata;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 
+import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.net.HttpHeaders;
 
 import edu.isi.karma.controller.command.CommandException;
 import edu.isi.karma.controller.command.selection.SuperSelection;
@@ -41,6 +54,7 @@ import edu.isi.karma.controller.update.UpdateContainer;
 import edu.isi.karma.controller.update.WorksheetListUpdate;
 import edu.isi.karma.controller.update.WorksheetUpdateFactory;
 import edu.isi.karma.imp.Import;
+import edu.isi.karma.imp.csv.CSVFileImport;
 import edu.isi.karma.imp.json.JsonImport;
 import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.Workspace;
@@ -91,10 +105,17 @@ public class ImportServiceCommand extends ImportCommand {
     public UpdateContainer doIt(Workspace workspace) throws CommandException {
       
         UpdateContainer c = new UpdateContainer();
-
         try {
-        	Object json = HTTPUtil.executeAndParseHTTPGetService(serviceUrl, includeInputAttributes);
-            
+        	
+            String filePath = downloadFile(serviceUrl, "/home/tarek/GUC/Bash/realtime-karma/karma-web/src/main/webapp/publish/");
+            System.out.println("File Path: " + filePath);
+            Object json = null;
+            try {
+                json = readJsonFromFile(filePath);
+            } catch (IOException e) {
+                logger.error("Error occured while reading json file: " + filePath);
+                return new UpdateContainer(new ErrorUpdate("Error reading json file"));
+            }
             Import imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
 
             Worksheet wsht = imp.generateWorksheet();
@@ -102,7 +123,7 @@ public class ImportServiceCommand extends ImportCommand {
 
             c.add(new WorksheetListUpdate());
             c.append(WorksheetUpdateFactory.createWorksheetHierarchicalAndCleaningResultsUpdates(wsht.getId(), SuperSelectionManager.DEFAULT_SELECTION, workspace.getContextId()));
-            // ServiceQueues.addServiceQueue(wsht.getId(), serviceUrl, encoding, worksheetName);
+            ServiceQueues.addServiceQueue(wsht.getId(), serviceUrl, encoding, worksheetName);
            
             return c;
         } catch (Exception e) {
@@ -112,18 +133,95 @@ public class ImportServiceCommand extends ImportCommand {
     
     }
 
-    public void serviceHelper(Workspace workspace,String workSheetId, String serviceUrl, String worksheetName, boolean includeInputAttributes, String encoding) throws ClientProtocolException, IOException,CommandException, JSONException, ClassNotFoundException, KarmaException {
-        Worksheet worksheet = Helper.workspace.getWorksheet(workSheetId);
-        Object json = HTTPUtil.executeAndParseHTTPGetService(serviceUrl, false);
-        Import imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
-        UpdateContainer c = new UpdateContainer();
-        
-        Worksheet wsht = imp.generateWorksheet();
-        worksheet.setDataTable(wsht.getDataTable());
-        c.add(new WorksheetListUpdate());
-        c.append(WorksheetUpdateFactory.createWorksheetHierarchicalAndCleaningResultsUpdates(workSheetId, SuperSelectionManager.DEFAULT_SELECTION, workspace.getContextId()));
-          
+    public void serviceHelper(Workspace workspace, String workSheetId, String serviceUrl, String worksheetName, boolean includeInputAttributes, String encoding) throws ClientProtocolException, IOException, CommandException, JSONException, ClassNotFoundException, KarmaException {
+        Worksheet worksheet = workspace.getWorksheet(workSheetId);
+        try {
+            String filePath = downloadFile(serviceUrl, "/home/tarek/GUC/Bash/realtime-karma/karma-web/src/main/webapp/publish/");
+            String fileExtension = getFileExtension(filePath); // Use the utility method to get file extension
+    
+            Import imp = null;
+            switch (fileExtension) {
+                case "json":
+                    JSONObject json = readJsonFromFile(filePath);
+                    imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
+                    break;
+                case "csv":
+                    // Assuming CSVFileImport constructor and other details are correct
+                    imp = new CSVFileImport(1, 2, ',', '"', encoding, 10000, new File(filePath), workspace, null);
+                    break;
+                case "xml":
+                    // XML file handling - assuming you have a similar constructor for XMLImport
+                    // Document xml = readXMLFile(filePath);
+                    // imp = new XMLImport(xml, worksheetName, workspace, encoding);
+                    break;
+                default:
+                    logger.error("Unsupported file extension: " + fileExtension);
+                    return;
+            }
+    
+            if (imp != null) {
+                imp.generateWorksheetFormKnowenWorkSheet(worksheet);
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while creating worksheet from web-service: " + serviceUrl, e);
+        }
     }
+    
+    private String getFileExtension(String filePath) {
+        int dotIndex = filePath.lastIndexOf('.');
+        return (dotIndex == -1) ? "" : filePath.substring(dotIndex + 1).toLowerCase();
+    }
+    
+
+
+    public static JSONObject readJsonFromFile(String filePath) throws IOException {
+        String content = new String(Files.readAllBytes(Paths.get(filePath)));
+        return new JSONObject(content);
+    }
+
+
+
+   
+    public String downloadFile(String serviceUrl, String outputDirectory) throws IOException, InterruptedException {
+       try {
+        
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(serviceUrl))
+                .GET()
+                .build();
+
+        // Create a temporary file
+        Path tempFile = Files.createTempFile(null, null);
+
+        // Download the content to the temporary file
+        HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(tempFile));
+
+        // Check Content-Type header from response to determine the file extension
+        String contentType = response.headers().firstValue("Content-Type").orElse("");
+        String extension = "";
+        if (contentType.contains("application/json")) {
+            extension = ".json";
+        } else if (contentType.contains("application/xml") || contentType.contains("text/xml")) {
+            extension = ".xml";
+        } else if (contentType.contains("text/csv")) {
+            extension = ".csv";
+        }
+
+        // Move and rename the temporary file based on the determined file extension
+        Path outputPath = Paths.get(outputDirectory, serviceUrl.substring(serviceUrl.lastIndexOf("/") + 1) + extension);
+        Files.move(tempFile, outputPath, StandardCopyOption.REPLACE_EXISTING);
+
+        System.out.println("File downloaded and saved as: " + outputPath);
+        return outputPath.toString();
+        
+       } catch (Exception e) {
+           System.out.println("Error in downloadFile: " + e.getMessage());
+           return null;
+       }
+    }
+
+   
     @Override
     protected Import createImport(Workspace workspace) {
         throw new UnsupportedOperationException("Not supported yet.");

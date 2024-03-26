@@ -6,6 +6,9 @@ import edu.isi.karma.controller.command.Command;
 import edu.isi.karma.controller.command.CommandFactory;
 import edu.isi.karma.rep.Workspace;
 
+class Helper {
+	static Workspace workspace;
+}
 public class PublishJSONCommandFactory  extends CommandFactory {
 	private enum Arguments {
 		worksheetId, importAsWorksheet
@@ -14,12 +17,16 @@ public class PublishJSONCommandFactory  extends CommandFactory {
 	@Override
 	public Command createCommand(HttpServletRequest request,
 			Workspace workspace) {
+		if (Helper.workspace == null) {
+			Helper.workspace = workspace;
+		}
 		String worksheetId = request.getParameter(Arguments.worksheetId
 				.name());
 		String sImportAsWorksheet = request.getParameter(Arguments.importAsWorksheet.name());
 		boolean importAsWorksheet = false;
 		if(sImportAsWorksheet != null)
 			importAsWorksheet = Boolean.valueOf(sImportAsWorksheet);
+
 		return new PublishJSONCommand(getNewId(workspace), Command.NEW_MODEL, worksheetId, importAsWorksheet);
 	}
 

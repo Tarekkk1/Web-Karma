@@ -61,5 +61,10 @@ public abstract class Import {
     public abstract Worksheet generateWorksheet() throws JSONException, IOException, KarmaException, ClassNotFoundException;
     
     public abstract Import duplicate() throws IOException;
+
+    public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'generateWorksheetFormKnowenWorkSheet'");
+    }
     
 }

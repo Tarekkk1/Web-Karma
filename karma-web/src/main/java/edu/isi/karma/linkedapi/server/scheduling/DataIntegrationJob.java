@@ -1,5 +1,8 @@
 package edu.isi.karma.linkedapi.server.scheduling;
 
+import edu.isi.karma.controller.command.publish.JsonQueue;
+import edu.isi.karma.controller.command.publish.JsonQueues;
+import edu.isi.karma.controller.command.publish.PublishJSONCommandFactory;
 import edu.isi.karma.controller.command.publish.PublishRDFCommandFactory;
 import edu.isi.karma.controller.command.publish.RdfQueue;
 import edu.isi.karma.controller.command.publish.RdfQueues;

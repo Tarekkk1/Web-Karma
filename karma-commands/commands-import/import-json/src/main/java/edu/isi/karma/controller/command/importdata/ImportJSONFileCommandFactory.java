@@ -34,7 +34,9 @@ import edu.isi.karma.util.FileUtil;
 import edu.isi.karma.webserver.ContextParametersRegistry;
 import edu.isi.karma.webserver.ServletContextParameterMap;
 import edu.isi.karma.webserver.ServletContextParameterMap.ContextParameter;
-
+class Helper {
+	static Workspace workspace;
+}
 public class ImportJSONFileCommandFactory extends CommandFactory {
 
 	static Logger logger = LoggerFactory.getLogger(ImportJSONFileCommandFactory.class);
@@ -42,6 +44,10 @@ public class ImportJSONFileCommandFactory extends CommandFactory {
 	@Override
 	public Command createCommand(HttpServletRequest request,
 			Workspace workspace) {
+				
+		if (Helper.workspace == null) {
+			Helper.workspace = workspace;
+		}
 
 		ServletContextParameterMap contextParameters = ContextParametersRegistry.getInstance().getContextParameters(workspace.getContextId());
 		File uploadedFile = FileUtil.downloadFileFromHTTPRequest(request, contextParameters.getParameterValue(ContextParameter.USER_UPLOADED_DIR));
