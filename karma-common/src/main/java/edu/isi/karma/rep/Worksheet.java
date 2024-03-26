@@ -31,6 +31,8 @@ import edu.isi.karma.rep.HNode.HNodeType;
 import edu.isi.karma.rep.alignment.SemanticTypes;
 import edu.isi.karma.rep.metadata.MetadataContainer;
 
+import edu.isi.karma.rep.RepFactory;
+
 /**
  * @author szekely
  *
@@ -96,8 +98,12 @@ public class Worksheet extends RepEntity {
         return dataTable;
     }
 
-    public void setDataTable(Table dataTable) {
-        this.dataTable = dataTable;
+    public void reSetDataTable(){
+        HTable newHeaders = new RepFactory().createHTable(headers.getTableName());
+		Table newDataTable = new RepFactory().createTable(headers.getId(), id);
+       
+        this.headers = newHeaders;
+        this.dataTable = newDataTable;
     }
 
     public String getEncoding() {

@@ -109,15 +109,27 @@ public class ImportServiceCommand extends ImportCommand {
         	
             String filePath = downloadFile(serviceUrl, "/home/tarek/GUC/Bash/realtime-karma/karma-web/src/main/webapp/publish/");
             System.out.println("File Path: " + filePath);
-            Object json = null;
-            try {
-                json = readJsonFromFile(filePath);
-            } catch (IOException e) {
-                logger.error("Error occured while reading json file: " + filePath);
-                return new UpdateContainer(new ErrorUpdate("Error reading json file"));
+         
+            String fileExtension = getFileExtension(filePath); // Use the utility method to get file extension
+    
+        
+            Import imp = null;
+            switch (fileExtension) {
+                case "json":
+                    JSONObject json = readJsonFromFile(filePath);
+                    imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
+                    break;
+                case "csv":
+                    // Assuming CSVFileImport constructor and other details are correct
+                    imp = new CSVFileImport(1, 2, ',', '"', encoding, 100000000, new File(filePath), workspace, null);
+                    break;
+                case "xml":
+                    // XML file handling - assuming you have a similar constructor for XMLImport
+                    // Document xml = readXMLFile(filePath);
+                    // imp = new XMLImport(xml, worksheetName, workspace, encoding);
+                    break;
+             
             }
-            Import imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
-
             Worksheet wsht = imp.generateWorksheet();
             c.add(new ImportServiceCommandPreferencesUpdate(serviceUrl, worksheetName));
 
@@ -147,7 +159,7 @@ public class ImportServiceCommand extends ImportCommand {
                     break;
                 case "csv":
                     // Assuming CSVFileImport constructor and other details are correct
-                    imp = new CSVFileImport(1, 2, ',', '"', encoding, 10000, new File(filePath), workspace, null);
+                    imp = new CSVFileImport(1, 2, ',', '"', encoding, 100000000, new File(filePath), workspace, null);
                     break;
                 case "xml":
                     // XML file handling - assuming you have a similar constructor for XMLImport

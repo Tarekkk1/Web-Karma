@@ -108,6 +108,49 @@ public class CSVImport extends Import {
         return getWorksheet();
     }
 
+
+        public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet) throws IOException {
+        
+            worksheet.getDataTable().removeAllRows();
+
+            Table dataTable = worksheet.getDataTable();
+        
+            // Index for row currently being read
+            int rowCount = 0;
+            Map<Integer, String> hNodeIdList = new HashMap<>();
+        
+            CSVReader reader = getCSVReader();
+        
+            // Populate the worksheet model
+            String[] rowValues = null;
+            while ((rowValues = reader.readNext()) != null) {
+                // Check for the header row
+                if (rowCount + 1 == headerRowIndex) {
+                    hNodeIdList = addHeaders(worksheet, getFactory(), rowValues, reader);
+                    rowCount++;
+                    continue;
+                }
+        
+                // Populate the model with data rows
+                if (rowCount + 1 >= dataStartRowIndex) {
+                    boolean added = addRow(worksheet, getFactory(), rowValues, hNodeIdList, dataTable);
+                    if(added) {
+                        rowCount++;
+                        if(maxNumLines > 0 && (rowCount - dataStartRowIndex) >= maxNumLines-1) {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+        
+                rowCount++;
+            }
+            reader.close();
+            worksheet.getMetadataContainer().getWorksheetProperties().setPropertyValue(Property.sourceType, SourceTypes.CSV.toString());
+           
+    }
+
+
     protected BufferedReader getLineReader() throws IOException {
         // Prepare the reader for reading file line by line
         InputStreamReader isr = EncodingDetector.getInputStreamReader(is, encoding);

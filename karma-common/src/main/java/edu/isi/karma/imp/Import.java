@@ -13,6 +13,7 @@ import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.Workspace;
 import edu.isi.karma.webserver.KarmaException;
 
+
 /**
  * 
  * This abstract class in an interface to all classes with import functionality
@@ -62,7 +63,8 @@ public abstract class Import {
     
     public abstract Import duplicate() throws IOException;
 
-    public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet2) {
+    // throws exception
+    public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet2) throws Exception {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'generateWorksheetFormKnowenWorkSheet'");
     }
