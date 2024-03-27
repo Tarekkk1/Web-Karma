@@ -44,23 +44,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.net.HttpHeaders;
+import edu.isi.karma.controller.command.Command;
 
 import edu.isi.karma.controller.command.CommandException;
+import edu.isi.karma.controller.command.CommandType;
 import edu.isi.karma.controller.command.selection.SuperSelection;
 import edu.isi.karma.controller.command.selection.SuperSelectionManager;
 import edu.isi.karma.controller.update.ErrorUpdate;
+import edu.isi.karma.controller.update.HistoryUpdate;
 import edu.isi.karma.controller.update.ImportServiceCommandPreferencesUpdate;
 import edu.isi.karma.controller.update.UpdateContainer;
 import edu.isi.karma.controller.update.WorksheetListUpdate;
 import edu.isi.karma.controller.update.WorksheetUpdateFactory;
 import edu.isi.karma.imp.Import;
 import edu.isi.karma.imp.csv.CSVFileImport;
+import edu.isi.karma.imp.csv.CSVImport;
 import edu.isi.karma.imp.json.JsonImport;
 import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.Workspace;
 import edu.isi.karma.rep.sources.InvocationManager;
 import edu.isi.karma.util.HTTPUtil;
+import edu.isi.karma.view.VWorkspace;
+import edu.isi.karma.view.VWorkspaceRegistry;
+import edu.isi.karma.webserver.ExecutionController;
 import edu.isi.karma.webserver.KarmaException;
+import edu.isi.karma.webserver.WorkspaceRegistry;
 import edu.isi.karma.controller.command.importdata.ServiceQueue;
 import edu.isi.karma.controller.command.importdata.ServiceQueues;
 
@@ -147,6 +155,7 @@ public class ImportServiceCommand extends ImportCommand {
 
     public void serviceHelper(Workspace workspace, String workSheetId, String serviceUrl, String worksheetName, boolean includeInputAttributes, String encoding) throws ClientProtocolException, IOException, CommandException, JSONException, ClassNotFoundException, KarmaException {
         Worksheet worksheet = workspace.getWorksheet(workSheetId);
+        UpdateContainer c = new UpdateContainer();
         try {
             String filePath = downloadFile(serviceUrl, "/home/tarek/GUC/Bash/realtime-karma/karma-web/src/main/webapp/publish/");
             String fileExtension = getFileExtension(filePath); // Use the utility method to get file extension
@@ -158,22 +167,24 @@ public class ImportServiceCommand extends ImportCommand {
                     imp = new JsonImport(json, worksheetName, workspace, encoding, -1);
                     break;
                 case "csv":
-                    // Assuming CSVFileImport constructor and other details are correct
-                    imp = new CSVFileImport(1, 2, ',', '"', encoding, 100000000, new File(filePath), workspace, null);
-                    break;
+                imp = worksheet.getImportMethod();
+                if (imp instanceof CSVImport) {
+                    System.out.println("The import is CSVImport");
+                    ((CSVImport) imp).setFile(new File(filePath));
+                    worksheet.getImportMethod().generateWorksheetFormKnowenWorkSheet(worksheet);
+               
+                }
+                      break;
                 case "xml":
-                    // XML file handling - assuming you have a similar constructor for XMLImport
-                    // Document xml = readXMLFile(filePath);
-                    // imp = new XMLImport(xml, worksheetName, workspace, encoding);
                     break;
                 default:
                     logger.error("Unsupported file extension: " + fileExtension);
                     return;
             }
     
-            if (imp != null) {
+            if (!(imp instanceof CSVImport))
                 imp.generateWorksheetFormKnowenWorkSheet(worksheet);
-            }
+ 
         } catch (Exception e) {
             logger.error("Error occurred while creating worksheet from web-service: " + serviceUrl, e);
         }

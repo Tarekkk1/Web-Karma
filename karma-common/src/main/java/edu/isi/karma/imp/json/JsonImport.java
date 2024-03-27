@@ -197,9 +197,9 @@ public class JsonImport extends Import {
 
 	public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet) throws JSONException {
 		int numObjects = 0;
-		// remove the existing data
 		worksheet.getDataTable().removeAllRows();
 		if (json instanceof JSONArray) {
+
 			worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.COLLECTION);
 			JSONArray a = (JSONArray) json;
 			for (int i = 0; i < a.length(); i++) {
@@ -211,6 +211,7 @@ public class JsonImport extends Import {
 					break;
 			}
 		} else if (json instanceof JSONObject) {
+
 			worksheet.getMetadataContainer().getWorksheetProperties().setWorksheetDataStructure(DataStructure.OBJECT);
 			JsonImportValues JsonImportValues = new JsonImportValues(maxNumLines, numObjects, getFactory(), worksheet, columnsJson);
 			JsonImportValues.addKeysAndValues((JSONObject) json, worksheet.getHeaders(),

@@ -45,7 +45,7 @@ public class Row extends RepEntity implements Neighbor {
 
 	// My nodes, columns containing cells or nested tables, a map from HNode ids
 	// to Node.
-	private final Map<String, Node> nodes = new HashMap<>();
+	private Map<String, Node> nodes = new HashMap<>();
 
 	// mariam
 	/**
@@ -335,5 +335,9 @@ public class Row extends RepEntity implements Neighbor {
 		}
 		return false;
 		
+	}
+
+	public void resetNodes() {
+	nodes = new HashMap<>();
 	}
 }

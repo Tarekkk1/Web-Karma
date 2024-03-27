@@ -26,7 +26,7 @@ public class CSVImport extends Import {
     protected final char delimiter;
     protected final char quoteCharacter;
     protected final char escapeCharacter;
-    protected final InputStream is;
+    protected InputStream is;
     protected final String encoding;
     protected final int maxNumLines;
     protected final JSONArray columnsJson;
@@ -61,8 +61,10 @@ public class CSVImport extends Import {
         this.is = is;
         this.columnsJson = columnsJson;
         
+        
     }
-    
+
+ 
     public CSVImport duplicate() throws IOException {
     	return new CSVImport(headerRowIndex, dataStartRowIndex, delimiter, quoteCharacter, encoding, maxNumLines, sourceName, is, workspace, columnsJson);
     }
@@ -109,48 +111,66 @@ public class CSVImport extends Import {
     }
 
 
-        public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet) throws IOException {
+    public void generateWorksheetFormKnowenWorkSheet(Worksheet worksheet) throws IOException, KarmaException {
+        worksheet.getDataTable().removeAllRows();
+        Table dataTable = worksheet.getDataTable();
+   
+    
+        // Index for row currently being read
+        int rowCount = 0;
+        Map<Integer, String> hNodeIdList = new HashMap<>();
         
-            worksheet.getDataTable().removeAllRows();
-
-            Table dataTable = worksheet.getDataTable();
+        CSVReader reader = getCSVReader();
         
-            // Index for row currently being read
-            int rowCount = 0;
-            Map<Integer, String> hNodeIdList = new HashMap<>();
-        
-            CSVReader reader = getCSVReader();
-        
-            // Populate the worksheet model
-            String[] rowValues = null;
-            while ((rowValues = reader.readNext()) != null) {
-                // Check for the header row
-                if (rowCount + 1 == headerRowIndex) {
-                    hNodeIdList = addHeaders(worksheet, getFactory(), rowValues, reader);
-                    rowCount++;
-                    continue;
-                }
-        
-                // Populate the model with data rows
-                if (rowCount + 1 >= dataStartRowIndex) {
-                    boolean added = addRow(worksheet, getFactory(), rowValues, hNodeIdList, dataTable);
-                    if(added) {
-                        rowCount++;
-                        if(maxNumLines > 0 && (rowCount - dataStartRowIndex) >= maxNumLines-1) {
-                            break;
-                        }
-                    }
-                    continue;
-                }
-        
+        String[] rowValues = null;
+        while ((rowValues = reader.readNext()) != null) {
+            if (rowCount + 1 == headerRowIndex) {
+                // Adjust headers in the worksheet based on the new CSV
+                hNodeIdList = adjustHeaders(worksheet, getFactory(), rowValues);
                 rowCount++;
+                continue;
             }
-            reader.close();
-            worksheet.getMetadataContainer().getWorksheetProperties().setPropertyValue(Property.sourceType, SourceTypes.CSV.toString());
-           
+            
+            // Populate the model with data rows
+            if (rowCount + 1 >= dataStartRowIndex) {
+                boolean added = addRow(worksheet, getFactory(), rowValues, hNodeIdList, dataTable);
+                if(added) {
+                    rowCount++;
+                    if(maxNumLines > 0 && (rowCount - dataStartRowIndex) >= maxNumLines-1) {
+                        break;
+                    }
+                }
+                continue;
+            }
+            
+            rowCount++;
+        }
+        reader.close();
+        worksheet.getMetadataContainer().getWorksheetProperties().setPropertyValue(Property.sourceType, SourceTypes.CSV.toString());
     }
-
-
+    
+    private Map<Integer, String> adjustHeaders(Worksheet worksheet, RepFactory fac, String[] newHeaders) throws IOException {
+        HTable headers = worksheet.getHeaders();
+        Map<Integer, String> headersMap = new HashMap<>();
+        
+        // Optionally clear existing headers if they do not match the new CSV structure
+        headers.resetHTable();
+    
+        for (int i = 0; i < newHeaders.length; i++) {
+            HNode hNode = headers.getHNodeFromColumnName(newHeaders[i]);
+            if (hNode == null) {
+                // Add new header if it doesn't exist
+                hNode = headers.addHNode(newHeaders[i], HNodeType.Regular, worksheet, fac);
+            }
+            headersMap.put(i, hNode.getId());
+        }
+        
+        // Optionally remove headers that do not exist in the new CSV
+        // This step would require iterating over existing headers and checking against newHeaders
+        
+        return headersMap;
+    }
+    
     protected BufferedReader getLineReader() throws IOException {
         // Prepare the reader for reading file line by line
         InputStreamReader isr = EncodingDetector.getInputStreamReader(is, encoding);
@@ -172,7 +192,8 @@ public class CSVImport extends Import {
             if (headerRowIndex == 0) {
                 if (isVisible("Column_" + (i + 1)))
                     hNode = headers.addHNode("Column_" + (i + 1), HNodeType.Regular, worksheet, fac);
-            } else {
+            } 
+            else {
                 if (isVisible(rowValues[i]))
                     hNode = headers.addHNode(rowValues[i], HNodeType.Regular, worksheet, fac);
             }
@@ -187,6 +208,7 @@ public class CSVImport extends Import {
             Map<Integer, String> hNodeIdMap, Table dataTable) throws IOException {
 
         if (rowValues == null || rowValues.length == 0) {
+            System.out.println("Empty row detected!");
             return false;
         }
 
@@ -197,7 +219,9 @@ public class CSVImport extends Import {
         for (int i = 0; i < rowValues.length; i++) {
             if(i >= size) {
                 HTable headers = worksheet.getHeaders();
+
                 HNode hNode = headers.addHNode("Column_" + (i + 1), HNodeType.Regular, worksheet, fac);
+                
                 hNodeIdMap.put(i, hNode.getId());
                 size = hNodeIdMap.size();
             }
@@ -205,11 +229,16 @@ public class CSVImport extends Import {
                 String hNodeId = hNodeIdMap.get(i);
                 if (hNodeId != null)
                     row.setValue(hNodeId, rowValues[i], fac);
+                System.out.println("Row Value: " + rowValues[i]);
             } else {
                 // TODO Our model does not allow a value to be added to a row
                 // without its associated HNode. In CSVs, there could be case
                 // where values in rows are greater than number of column names.
+                // In such cases, we should add a new HNode to the worksheet and
+                // add the value to the row.
+                    
                 logger.error("More data elements detected in the row than number of headers!");
+                System.out.println("More data elements detected in the row than number of headers!");
             }
         }
         return true;
@@ -224,5 +253,10 @@ public class CSVImport extends Import {
                 return obj.getBoolean(key);
         }
         return false;
+    }
+
+
+    public void setFile(File file) throws FileNotFoundException {
+        this.is = new FileInputStream(file);
     }
 }

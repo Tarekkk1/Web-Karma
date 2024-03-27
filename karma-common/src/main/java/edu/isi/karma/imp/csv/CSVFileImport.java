@@ -28,6 +28,8 @@ import java.io.IOException;
 
 import org.json.JSONArray;
 
+import edu.isi.karma.rep.RepFactory;
+import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.Workspace;
 
 public class CSVFileImport extends CSVImport {
@@ -47,7 +49,6 @@ public class CSVFileImport extends CSVImport {
     			workspace, columnsJson);
        filename = csvFile.getAbsolutePath();
     }
-
     public CSVFileImport duplicate() throws IOException {
     	return new CSVFileImport(headerRowIndex, dataStartRowIndex, delimiter, quoteCharacter, encoding, maxNumLines, 
     			new File(filename), workspace, columnsJson);

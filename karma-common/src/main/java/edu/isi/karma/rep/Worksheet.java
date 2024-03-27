@@ -256,4 +256,12 @@ public class Worksheet extends RepEntity {
     public Import getImportMethod() {
         return this.importMethod;
     }
+    // private HTable headers;
+    // private Table dataTable;
+    public void setHeaders(HTable headers) {
+        this.headers = headers;
+    }
+    public void setDataTable(Table dataTable) {
+        this.dataTable = dataTable;
+    }
 }

@@ -379,4 +379,9 @@ public class HTable extends RepEntity {
 		
 		return node;
 	}
+
+	public void resetHTable()
+	{
+		this.orderedNodeIds.clear();
+	}
 }
